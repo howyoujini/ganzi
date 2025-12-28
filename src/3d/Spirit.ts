@@ -28,6 +28,8 @@ export class Spirit {
   private timeElement: HTMLElement | null = null;
   private currentDay: number = -1;
   private currentSecond: number = -1;
+  private isDarkMode: boolean = false;
+  private modeToggleButton: HTMLElement | null = null;
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -40,7 +42,7 @@ export class Spirit {
     });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.setSize(container.clientWidth, container.clientHeight);
-    this.renderer.setClearColor(0xf5f5f5, 1);
+    this.renderer.setClearColor(0xffffff, 1);
     container.appendChild(this.renderer.domElement);
 
     // Check for required extensions
@@ -96,6 +98,9 @@ export class Spirit {
 
     // Setup clock
     this.setupClock();
+
+    // Setup mode toggle
+    this.setupModeToggle();
 
     // Start animation
     this.animate();
@@ -202,6 +207,56 @@ export class Spirit {
     this.updateTime();
   }
 
+  private setupModeToggle(): void {
+    this.modeToggleButton = document.createElement("button");
+    this.modeToggleButton.textContent = "Dark";
+    this.modeToggleButton.style.cssText = `
+      position: absolute;
+      top: 24px;
+      right: 24px;
+      padding: 12px 24px;
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-size: 16px;
+      font-weight: 500;
+      letter-spacing: 2px;
+      border: 1px solid #2a2a2a;
+      background: transparent;
+      color: #2a2a2a;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    `;
+    this.modeToggleButton.addEventListener("click", () => this.toggleMode());
+    this.container.appendChild(this.modeToggleButton);
+  }
+
+  private toggleMode(): void {
+    this.isDarkMode = !this.isDarkMode;
+
+    if (this.isDarkMode) {
+      // Dark mode
+      this.renderer.setClearColor(0x1a1a1a, 1);
+      if (this.clockElement) {
+        this.clockElement.style.color = "#f5f5f5";
+      }
+      if (this.modeToggleButton) {
+        this.modeToggleButton.textContent = "Light";
+        this.modeToggleButton.style.borderColor = "#f5f5f5";
+        this.modeToggleButton.style.color = "#f5f5f5";
+      }
+    } else {
+      // Light mode
+      this.renderer.setClearColor(0xffffff, 1);
+      if (this.clockElement) {
+        this.clockElement.style.color = "#2a2a2a";
+      }
+      if (this.modeToggleButton) {
+        this.modeToggleButton.textContent = "Dark";
+        this.modeToggleButton.style.borderColor = "#2a2a2a";
+        this.modeToggleButton.style.color = "#2a2a2a";
+      }
+    }
+  }
+
   private setupEvents(): void {
     window.addEventListener("resize", this.onResize.bind(this));
     this.renderer.domElement.addEventListener("mousemove", this.onMouseMove.bind(this));
@@ -296,6 +351,9 @@ export class Spirit {
     this.container.removeChild(this.renderer.domElement);
     if (this.clockElement) {
       this.container.removeChild(this.clockElement);
+    }
+    if (this.modeToggleButton) {
+      this.container.removeChild(this.modeToggleButton);
     }
   }
 }
