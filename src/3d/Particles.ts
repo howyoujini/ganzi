@@ -1,8 +1,8 @@
 import * as THREE from "three";
-import { Simulator } from "./Simulator";
+import particlesFrag from "../shaders/particles.frag";
 
 import particlesVert from "../shaders/particles.vert";
-import particlesFrag from "../shaders/particles.frag";
+import type { Simulator } from "./Simulator";
 
 export interface ParticlesSettings {
   color1: THREE.Color;

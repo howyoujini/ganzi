@@ -183,7 +183,7 @@ export function generateDetailedHorse(count: number, scale: number = 80): Float3
 
     // Add slight depth variation based on position
     const depthVariation = 0.1 + (1 - (selectedPart.density || 1)) * 0.1;
-    let z = (rand() - 0.5) * depthVariation;
+    const z = (rand() - 0.5) * depthVariation;
 
     // Apply rotation if specified
     if (selectedPart.rotation) {

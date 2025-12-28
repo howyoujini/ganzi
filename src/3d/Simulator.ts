@@ -210,7 +210,7 @@ export class Simulator {
     this.frameCount++;
 
     // Update horse animation
-    if (this.horseData && this.horseData.mixer) {
+    if (this.horseData?.mixer) {
       this.horseData.mixer.update(dt);
 
       // Update particle positions from animated mesh (skip frames for performance)
