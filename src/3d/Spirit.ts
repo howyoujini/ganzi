@@ -25,6 +25,9 @@ export class Spirit {
   private raycaster: THREE.Raycaster = new THREE.Raycaster();
   private followMouse: boolean = true;
   private clockElement: HTMLElement | null = null;
+  private timeElement: HTMLElement | null = null;
+  private currentDay: number = -1;
+  private currentSecond: number = -1;
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -114,13 +117,35 @@ export class Spirit {
       user-select: none;
       text-align: center;
     `;
+
+    // 시간 표시 엘리먼트 (매 프레임 업데이트)
+    this.timeElement = document.createElement("div");
+    this.timeElement.style.cssText = `
+      font-size: 100px;
+      font-weight: 500;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 10px 0;
+    `;
+
+    this.clockElement.appendChild(this.timeElement);
     this.container.appendChild(this.clockElement);
-    this.updateClock();
+
+    this.updateDate();
+    this.updateTime();
   }
 
-  private updateClock(): void {
-    if (!this.clockElement) return;
+  private updateDate(): void {
+    if (!this.clockElement || !this.timeElement) return;
+
     const now = new Date();
+    const day = now.getDate();
+
+    // 날짜가 바뀌었을 때만 업데이트
+    if (this.currentDay === day) return;
+    this.currentDay = day;
+
     const year = now.getFullYear();
     const months = [
       "Jan",
@@ -137,17 +162,44 @@ export class Spirit {
       "Dec",
     ];
     const month = months[now.getMonth()];
-    const day = now.getDate().toString().padStart(2, "0");
+    const dayStr = day.toString().padStart(2, "0");
+
+    // 날짜 엘리먼트들을 timeElement 앞에 삽입
+    const dateHTML = `
+      <div style="font-size: 24px; letter-spacing: 6px; margin-bottom: 4px;">${year}</div>
+      <div style="font-size: 36px; letter-spacing: 4px; margin-bottom: 12px;">${month} ${dayStr}</div>
+    `;
+
+    // 기존 날짜 엘리먼트 제거 후 새로 추가
+    const existingDateElements = this.clockElement.querySelectorAll("div:not(:last-child)");
+    existingDateElements.forEach((el) => {
+      el.remove();
+    });
+    this.timeElement.insertAdjacentHTML("beforebegin", dateHTML);
+  }
+
+  private updateTime(): void {
+    if (!this.timeElement) return;
+
+    const now = new Date();
+    const seconds = now.getSeconds();
+
+    // 초가 바뀌었을 때만 업데이트
+    if (this.currentSecond === seconds) return;
+    this.currentSecond = seconds;
+
     const hour24 = now.getHours();
     const ampm = hour24 >= 12 ? "PM" : "AM";
     const hours = hour24.toString().padStart(2, "0");
     const minutes = now.getMinutes().toString().padStart(2, "0");
-    const seconds = now.getSeconds().toString().padStart(2, "0");
-    this.clockElement.innerHTML = `
-      <div style="font-size: 20px; letter-spacing: 6px; margin-bottom: 4px;">${year}</div>
-      <div style="font-size: 28px; letter-spacing: 4px; margin-bottom: 12px;">${month} ${day}</div>
-      <div>${hours}:${minutes}:${seconds} <span style="font-size: 24px;">${ampm}</span></div>
-    `;
+    const secondsStr = seconds.toString().padStart(2, "0");
+
+    this.timeElement.innerHTML = `${hours}:${minutes}:${secondsStr} <span style="font-size: 28px; font-weight: 400;">${ampm}</span>`;
+  }
+
+  private updateClock(): void {
+    this.updateDate();
+    this.updateTime();
   }
 
   private setupEvents(): void {
