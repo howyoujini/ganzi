@@ -28,8 +28,8 @@ void main() {
   vec3 targetPos = defaultPos.xyz;
   float seed = defaultPos.w;
 
-  // 70% stay on surface, 30% scatter/fly off
-  float isScatter = step(0.70, seed);
+  // 80% stay on surface, 20% scatter/fly off
+  float isScatter = step(0.80, seed);
 
   // Simplified noise calculation (reuse same noise for performance)
   vec3 noise = curl(targetPos * 0.01, time * 0.01, 0.1);
