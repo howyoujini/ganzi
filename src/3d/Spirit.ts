@@ -30,6 +30,8 @@ export class Spirit {
   private currentSecond: number = -1;
   private isDarkMode: boolean = false;
   private modeToggleButton: HTMLElement | null = null;
+  private progressBarContainer: HTMLElement | null = null;
+  private horseIndicator: HTMLElement | null = null;
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -104,6 +106,9 @@ export class Spirit {
 
     // Setup mode toggle
     this.setupModeToggle();
+
+    // Setup progress bar
+    this.setupProgressBar();
 
     // Start animation
     this.animate();
@@ -238,6 +243,221 @@ export class Spirit {
     this.container.appendChild(this.modeToggleButton);
   }
 
+  private setupProgressBar(): void {
+    this.progressBarContainer = document.createElement("div");
+    this.progressBarContainer.style.cssText = `
+      position: absolute;
+      bottom: clamp(20px, 2vh, 80px);
+      left: 0;
+      width: 100%;
+      pointer-events: none;
+      user-select: none;
+    `;
+
+    // Progress bar track (wider to allow scrolling effect)
+    const track = document.createElement("div");
+    track.className = "progress-track";
+    track.style.cssText = `
+      position: relative;
+      width: 300%;
+      left: -100%;
+      height: 2px;
+      background: #e6e6e6;
+      border-radius: 1px;
+      transition: transform 0.5s ease-out;
+    `;
+
+    // Date markers container (matches track width)
+    const markersContainer = document.createElement("div");
+    markersContainer.className = "progress-markers";
+    markersContainer.style.cssText = `
+      position: relative;
+      width: 300%;
+      left: -100%;
+      height: 30px;
+      margin-top: 12px;
+      transition: transform 0.5s ease-out;
+    `;
+
+    // Create date labels (9 days to fill 300% width)
+    const now = new Date();
+    const formatDate = (date: Date): string => {
+      const month = (date.getMonth() + 1).toString().padStart(2, "0");
+      const day = date.getDate().toString().padStart(2, "0");
+      return `${month}.${day}`;
+    };
+
+    const daySpacingPercent = 100 / 9; // 11.11%
+
+    for (let i = -4; i <= 4; i++) {
+      const date = new Date(now);
+      date.setDate(date.getDate() + i);
+      const labelText = i === 0 ? "Today" : formatDate(date);
+      const dayIndex = i + 4; // Convert -4~4 to 0~8
+      const position = dayIndex * daySpacingPercent; // Position at 0:00 of each day
+
+      const marker = document.createElement("div");
+      marker.style.cssText = `
+        position: absolute;
+        left: ${position}%;
+        transform: translateX(-50%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      `;
+
+      // Tick mark (positioned to cross the track line, centered on it)
+      const tick = document.createElement("div");
+      tick.className = "progress-tick";
+      tick.style.cssText = `
+        position: absolute;
+        top: -17px;
+        width: 2px;
+        height: 10px;
+        background: #aaa;
+      `;
+
+      // Label
+      const label = document.createElement("div");
+      label.className = "progress-date-label";
+      label.textContent = labelText;
+      label.style.cssText = `
+        font-family: 'Cormorant Garamond', Georgia, serif;
+        font-size: clamp(12px, 2.5vw, 16px);
+        font-weight: 400;
+        color: #2a2a2a;
+        letter-spacing: 1px;
+        white-space: nowrap;
+        margin-top: 8px;
+        ${i === 0 ? "font-weight: 500;" : ""}
+      `;
+
+      marker.appendChild(tick);
+      marker.appendChild(label);
+      markersContainer.appendChild(marker);
+    }
+
+    // Time markers across the entire progress bar (300% width)
+    // Will be hidden on mobile via updateTimeMarkersVisibility
+    const daySpacing = 100 / 9; // 11.11%
+    const hours = [0, 3, 6, 9, 12, 15, 18, 21];
+
+    // Helper to create time marker
+    const createTimeMarker = (position: number, label: string) => {
+      const timeMarker = document.createElement("div");
+      timeMarker.className = "time-marker";
+      timeMarker.style.cssText = `
+        position: absolute;
+        left: ${position}%;
+        top: 4px;
+        transform: translateX(-50%);
+        font-family: 'Cormorant Garamond', Georgia, serif;
+        font-size: clamp(11px, 2vw, 14px);
+        color: #999;
+        white-space: nowrap;
+      `;
+      timeMarker.textContent = label;
+      track.appendChild(timeMarker);
+    };
+
+    // Add time markers for each day (9 days, indices 0-8, today is index 4)
+    for (let dayIndex = 0; dayIndex < 9; dayIndex++) {
+      const dayStart = dayIndex * daySpacing; // Start of day section
+      const dayEnd = (dayIndex + 1) * daySpacing; // End of day section
+
+      hours.forEach((hour) => {
+        const progress = hour / 24;
+        const position = dayStart + progress * (dayEnd - dayStart);
+        createTimeMarker(position, `${hour.toString().padStart(2, "0")}`);
+      });
+    }
+
+    // Add opacity animation keyframes
+    const styleSheet = document.createElement("style");
+    styleSheet.textContent = `
+      @keyframes horsePulse {
+        0%, 100% { opacity: 0.4; }
+        50% { opacity: 1; }
+      }
+    `;
+    document.head.appendChild(styleSheet);
+
+    // Horse indicator (fixed at center of container)
+    this.horseIndicator = document.createElement("div");
+    this.horseIndicator.style.cssText = `
+      position: absolute;
+      left: 50%;
+      top: -10px;
+      width: 20px;
+      height: 20px;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+      animation: horsePulse 1.5s ease-in-out infinite;
+    `;
+
+    // Horse icon (simple running circle)
+    this.horseIndicator.innerHTML = `
+      <svg width="14" height="14" viewBox="0 0 20 20">
+        <circle cx="10" cy="10" r="6" fill="#cc1100"/>
+      </svg>
+    `;
+
+    this.progressBarContainer.appendChild(track);
+    this.progressBarContainer.appendChild(markersContainer);
+    this.progressBarContainer.appendChild(this.horseIndicator);
+    this.container.appendChild(this.progressBarContainer);
+
+    // Initial position update
+    this.updateProgressBar();
+    this.updateTimeMarkersVisibility();
+  }
+
+  private updateTimeMarkersVisibility(): void {
+    if (!this.progressBarContainer) return;
+
+    const isMobile = window.innerWidth < 768;
+    const timeMarkers = this.progressBarContainer.querySelectorAll(".time-marker");
+    timeMarkers.forEach((tm) => {
+      (tm as HTMLElement).style.display = isMobile ? "none" : "block";
+    });
+  }
+
+  private updateProgressBar(): void {
+    if (!this.progressBarContainer) return;
+
+    const now = new Date();
+    const hours = now.getHours();
+    const minutes = now.getMinutes();
+    const seconds = now.getSeconds();
+
+    // Calculate progress through the day (0 to 1)
+    const totalSeconds = hours * 3600 + minutes * 60 + seconds;
+    const dayProgress = totalSeconds / 86400; // 86400 seconds in a day
+
+    // With 9 days on 300% track, each day spans 11.11%
+    // Today (index 4) starts at 44.44% of the track
+    const daySpacing = 100 / 9; // 11.11%
+    const todayStart = 4 * daySpacing; // 44.44%
+    const currentPosition = todayStart + dayProgress * daySpacing;
+
+    // Translate track so current position is at center (50%)
+    // translateX = (50 - currentPosition)% of track width
+    const translateX = 50 - currentPosition;
+
+    const track = this.progressBarContainer.querySelector(".progress-track") as HTMLElement;
+    const markers = this.progressBarContainer.querySelector(".progress-markers") as HTMLElement;
+
+    if (track) {
+      track.style.transform = `translateX(${translateX}%)`;
+    }
+    if (markers) {
+      markers.style.transform = `translateX(${translateX}%)`;
+    }
+  }
+
   private toggleMode(): void {
     this.isDarkMode = !this.isDarkMode;
 
@@ -252,6 +472,7 @@ export class Spirit {
         this.modeToggleButton.style.borderColor = "#f5f5f5";
         this.modeToggleButton.style.color = "#f5f5f5";
       }
+      this.updateProgressBarColors("#f5f5f5", "#666");
     } else {
       // Light mode
       this.renderer.setClearColor(0xffffff, 1);
@@ -263,7 +484,32 @@ export class Spirit {
         this.modeToggleButton.style.borderColor = "#2a2a2a";
         this.modeToggleButton.style.color = "#2a2a2a";
       }
+      this.updateProgressBarColors("#2a2a2a", "#ccc");
     }
+  }
+
+  private updateProgressBarColors(textColor: string, trackColor: string): void {
+    if (!this.progressBarContainer) return;
+
+    const track = this.progressBarContainer.querySelector("div") as HTMLElement;
+    if (track) {
+      track.style.background = trackColor;
+    }
+
+    const labels = this.progressBarContainer.querySelectorAll(".progress-date-label");
+    labels.forEach((label) => {
+      (label as HTMLElement).style.color = textColor;
+    });
+
+    const ticks = this.progressBarContainer.querySelectorAll(".progress-tick");
+    ticks.forEach((tick) => {
+      (tick as HTMLElement).style.background = trackColor;
+    });
+
+    const timeMarkers = this.progressBarContainer.querySelectorAll(".time-marker");
+    timeMarkers.forEach((tm) => {
+      (tm as HTMLElement).style.color = this.isDarkMode ? "#777" : "#999";
+    });
   }
 
   private setupEvents(): void {
@@ -289,6 +535,9 @@ export class Spirit {
 
     // 모바일에서 카메라 거리 조절 (세로 모드일 때 더 멀리)
     this.updateCameraForViewport(width, height);
+
+    // 시간 마커 표시 여부 업데이트
+    this.updateTimeMarkersVisibility();
   }
 
   private updateCameraForViewport(width: number, height: number): void {
@@ -372,6 +621,9 @@ export class Spirit {
     // Update clock
     this.updateClock();
 
+    // Update progress bar
+    this.updateProgressBar();
+
     // Render with post-processing
     this.composer.render();
   };
@@ -386,6 +638,9 @@ export class Spirit {
     }
     if (this.modeToggleButton) {
       this.container.removeChild(this.modeToggleButton);
+    }
+    if (this.progressBarContainer) {
+      this.container.removeChild(this.progressBarContainer);
     }
   }
 }
