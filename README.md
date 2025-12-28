@@ -1,4 +1,4 @@
-# The Spirit
+# The Red Horse
 
 GPGPU 기반 파티클 시뮬레이션으로, Three.js의 GPU 컴퓨팅 패턴을 활용하여 **25만 개(500×500)**의 파티클이 말(Horse) 형상을 따라 움직이는 실시간 시각화 프로젝트입니다.
 
