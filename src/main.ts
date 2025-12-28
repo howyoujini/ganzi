@@ -1,6 +1,9 @@
 import { Spirit } from "./3d/Spirit";
 
-const container = document.getElementById("container")!;
+const container = document.getElementById("container");
+if (!container) {
+  throw new Error("Container element not found");
+}
 
 const spirit = new Spirit(container);
 
