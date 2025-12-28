@@ -1,10 +1,9 @@
 import * as THREE from "three";
-import { FBOHelper } from "./FBOHelper";
-import { HorseLoader, HorseData } from "./HorseLoader";
-import { MeshSampler } from "../utils/MeshSampler";
-
-import throughVert from "../shaders/through.vert";
 import positionFrag from "../shaders/position.frag";
+import throughVert from "../shaders/through.vert";
+import { MeshSampler } from "../utils/MeshSampler";
+import { FBOHelper } from "./FBOHelper";
+import { type HorseData, HorseLoader } from "./HorseLoader";
 
 export interface SimulatorSettings {
   speed: number;
@@ -101,7 +100,7 @@ export class Simulator {
 
       // Setup horse scene
       this.horseScene.add(this.horseData.scene);
-      this.horseScene.scale.setScalar(0.5);
+      this.horseScene.scale.setScalar(0.6);
       this.horseScene.rotation.y = Math.PI / 2; // Face right
       this.horseScene.position.set(0, -30, 0);
       this.horseScene.visible = false;

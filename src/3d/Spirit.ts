@@ -96,6 +96,9 @@ export class Spirit {
     // Events
     this.setupEvents();
 
+    // 초기 뷰포트에 맞게 카메라 설정
+    this.updateCameraForViewport(container.clientWidth, container.clientHeight);
+
     // Setup clock
     this.setupClock();
 
@@ -110,28 +113,30 @@ export class Spirit {
     this.clockElement = document.createElement("div");
     this.clockElement.style.cssText = `
       position: absolute;
-      top: 10%;
+      top: clamp(16px, 5%, 10%);
       left: 50%;
       transform: translateX(-50%);
       font-family: 'Cormorant Garamond', Georgia, serif;
-      font-size: 56px;
+      font-size: clamp(32px, 8vw, 56px);
       font-weight: 300;
       color: #2a2a2a;
-      letter-spacing: 8px;
+      letter-spacing: clamp(4px, 1vw, 8px);
       pointer-events: none;
       user-select: none;
       text-align: center;
+      width: 90%;
+      max-width: 600px;
     `;
 
     // 시간 표시 엘리먼트 (매 프레임 업데이트)
     this.timeElement = document.createElement("div");
     this.timeElement.style.cssText = `
-      font-size: 100px;
+      font-size: clamp(48px, 12vw, 100px);
       font-weight: 500;
       display: flex;
       justify-content: center;
       align-items: center;
-      padding: 10px 0;
+      padding: clamp(4px, 1vw, 10px) 0;
     `;
 
     this.clockElement.appendChild(this.timeElement);
@@ -171,8 +176,8 @@ export class Spirit {
 
     // 날짜 엘리먼트들을 timeElement 앞에 삽입
     const dateHTML = `
-      <div style="font-size: 24px; letter-spacing: 6px; margin-bottom: 4px;">${year}</div>
-      <div style="font-size: 36px; letter-spacing: 4px; margin-bottom: 12px;">${month} ${dayStr}</div>
+      <div style="font-size: clamp(14px, 3vw, 24px); letter-spacing: clamp(3px, 0.8vw, 6px); margin-bottom: clamp(2px, 0.5vw, 4px);">${year}</div>
+      <div style="font-size: clamp(20px, 5vw, 36px); letter-spacing: clamp(2px, 0.5vw, 4px); margin-bottom: clamp(6px, 1.5vw, 12px);">${month} ${dayStr}</div>
     `;
 
     // 기존 날짜 엘리먼트 제거 후 새로 추가
@@ -199,7 +204,7 @@ export class Spirit {
     const minutes = now.getMinutes().toString().padStart(2, "0");
     const secondsStr = seconds.toString().padStart(2, "0");
 
-    this.timeElement.innerHTML = `${hours}:${minutes}:${secondsStr} <span style="font-size: 28px; font-weight: 400;">${ampm}</span>`;
+    this.timeElement.innerHTML = `${hours}:${minutes}:${secondsStr} <span style="font-size: clamp(16px, 4vw, 28px); font-weight: 400;">${ampm}</span>`;
   }
 
   private updateClock(): void {
@@ -212,18 +217,22 @@ export class Spirit {
     this.modeToggleButton.textContent = "Dark";
     this.modeToggleButton.style.cssText = `
       position: absolute;
-      top: 24px;
-      right: 24px;
-      padding: 12px 24px;
+      top: clamp(12px, 3vw, 24px);
+      right: clamp(12px, 3vw, 24px);
+      padding: clamp(10px, 2vw, 12px) clamp(16px, 4vw, 24px);
+      min-width: 44px;
+      min-height: 44px;
       font-family: 'Cormorant Garamond', Georgia, serif;
-      font-size: 16px;
+      font-size: clamp(14px, 2.5vw, 16px);
       font-weight: 500;
-      letter-spacing: 2px;
+      letter-spacing: clamp(1px, 0.3vw, 2px);
       border: 1px solid #2a2a2a;
       background: transparent;
       color: #2a2a2a;
       cursor: pointer;
       transition: all 0.3s ease;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
     `;
     this.modeToggleButton.addEventListener("click", () => this.toggleMode());
     this.container.appendChild(this.modeToggleButton);
@@ -277,6 +286,29 @@ export class Spirit {
     this.renderer.setSize(width, height);
     this.composer.setSize(width, height);
     this.bloomPass.resolution.set(width, height);
+
+    // 모바일에서 카메라 거리 조절 (세로 모드일 때 더 멀리)
+    this.updateCameraForViewport(width, height);
+  }
+
+  private updateCameraForViewport(width: number, height: number): void {
+    const isMobile = width < 768;
+    const isPortrait = height > width;
+
+    if (isMobile && isPortrait) {
+      // 모바일 세로 모드: 카메라를 더 멀리 배치
+      this.controls.minDistance = 150;
+      this.controls.maxDistance = 250;
+      this.camera.position.z = Math.max(this.camera.position.z, 180);
+    } else if (isMobile) {
+      // 모바일 가로 모드
+      this.controls.minDistance = 120;
+      this.controls.maxDistance = 220;
+    } else {
+      // 데스크톱
+      this.controls.minDistance = 100;
+      this.controls.maxDistance = 200;
+    }
   }
 
   private onMouseMove(event: MouseEvent): void {
