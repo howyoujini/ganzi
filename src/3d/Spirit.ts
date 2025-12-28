@@ -77,7 +77,7 @@ export class Spirit {
     this.controls.maxAzimuthAngle = (Math.PI * 2) / 3; // 120°
 
     // Setup simulator and particles (optimized particle count)
-    this.simulator = new Simulator(this.renderer, 500 * 500);
+    this.simulator = new Simulator(this.renderer, 550 * 550);
     this.particles = new Particles(this.simulator);
     this.scene.add(this.particles.mesh);
 
